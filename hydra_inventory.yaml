@@ -1,13 +1,13 @@
 ---
 
-# Create a host group: hydra_hosts from Hydra database
+# Create a host group: hydra_hosts from Inventory tool database
 #
 # Input Variables:
 #
 # API Credentials
 # cred_token: <string>
 #
-# hydra:
+# tool:
 #   pool:   <int>
 #   site:   <int>
 #   tenant: <int>
@@ -18,24 +18,24 @@
   gather_facts: no
 
   tasks:
-      - name: Get the host from Inventort Tool Hydra
+      - name: Get the host from Inventory Tool 
         uri:
-          url:
+          url: "https://xyz/api/1.0/ci/search"
           method: POST
           body_format: json
           body:
               token: "{{api_token}}"
-              parents_connection: "{{hydra_pool}}"
-              logical_site_id: "{{hydra.site}}"
+              parents_connection: "{{tool.pool}}"
+              logical_site_id: "{{tool.site}}"
           timeout: 10
           validate_certs: no
-        register: hydra_output
+        register: tool_output
 
 
       - name: Create host group
         add_host:
             name: "{{ item.hostname }}"
-            groups: hydra_hosts
-        with_items: "{{ hydra_output.json.result }}"
+            groups: hydraaa_hosts
+        with_items: "{{ tool_output.json.result }}"
 
 

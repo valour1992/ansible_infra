@@ -1,0 +1,41 @@
+---
+
+# Create a host group: hydra_hosts from Hydra database
+#
+# Input Variables:
+#
+# API Credentials
+# cred_token: <string>
+#
+# hydra:
+#   pool:   <int>
+#   site:   <int>
+#   tenant: <int>
+#   status: <int>
+#   limit:  <int>
+- name: Create Hydra Based Host groups
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+      - name: Get the host from Inventort Tool Hydra
+        uri:
+          url:
+          method: POST
+          body_format: json
+          body:
+              token: "{{api_token}}"
+              parents_connection: "{{hydra_pool}}"
+              logical_site_id: "{{hydra.site}}"
+          timeout: 10
+          validate_certs: no
+        register: hydra_output
+
+
+      - name: Create host group
+        add_host:
+            name: "{{ item.hostname }}"
+            groups: hydra_hosts
+        with_items: "{{ hydra_output.json.result }}"
+
+

@@ -1,0 +1,65 @@
+---
+
+- Renew Puppet Cert
+  hosts: all
+  gather_facts: no
+  strategy: free
+
+  tasks:
+  	- name: Get Fqdn
+  	  shell: |
+  	  	grep certname /etc/puppet/puppet.conf | awk '{print $3}'
+  	  register: fqdn
+  	  args:
+  	  	executable: /bin/bash
+  	  changed_when : False
+
+
+  	- name: Check certficate age
+  	  shell: |
+  	   	 openssl x509 -noout -in /var/lib/puppet/ssl/certs/{{ fqdn.stdout }}.pem -checkend $((24*3600*30))
+  	   args:
+  	   	executable: /bin/bash
+  	   register: result
+  	   failed_when: "'Error' in result.stderr"
+  	   changed_when : False
+
+  	- name: Clean Old Certificate on puppet ca server
+  	  uri:
+  	  	url:  http://puppetca.lmera.xyz.se:8080/api/delete_cert/{{ fqdn.stdout }}
+  	  	method: Delete
+  	  	return_content: yes
+  	  register: delcert
+  	  args:	
+  	  	warn: False
+  	  changed_when: True
+  	  notify:
+  	  	- kill puppet
+  	  	- remove ssl dir
+  	  	- run puppet
+
+  	  handlers:
+  	  	- name: Kill puppet
+  	  	  command: /usr/bin/killall puppet
+
+  	  	- name: remove ssl dir
+  	  	  file:
+  	  	  	path: /var/lib/puppet/ssl
+  	  	  	state: absent
+
+  	  	- name: run puppet
+  	  	  shell:  /opt/puppet/bin/puppet agent -t --color=false
+  	  	  args:
+  	  	  	executable: /bin/bash
+  	  	  register: puppet_out
+  	  	  failed_when: puppet_out.rc ==1
+
+
+
+
+
+
+
+
+
+
